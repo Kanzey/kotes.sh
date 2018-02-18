@@ -61,7 +61,7 @@ fi
 DEDITOR='/usr/bin/editor' 
 
 if [ ! -x $DEDITOR ]; then
-	default_editor='vi'
+	DEDITOR='vi'
 fi
 
 awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
