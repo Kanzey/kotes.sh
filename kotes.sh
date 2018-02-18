@@ -36,7 +36,7 @@ while getopts ':t:lf:h' opt; do
 done
 
 if [ $F_LIST ]; then
-	grep -i '^#' $FILE | tr ' ' '\n' | sort | uniq | more
+	grep  '^#' $FILE | tr ' ' '\n' | sort | uniq | more
 	exit 0;
 fi
 
@@ -54,7 +54,7 @@ fi
 temp_file_2=$(mktemp)
 if [ ! -f $temp_file_2 ]; then
 	echo "Unable to create tmp file." >&2
-	rm -rf ${temp_file_1}
+	rm -r ${temp_file_1}
 	exit 1
 fi
 
@@ -67,23 +67,23 @@ fi
 awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
 
 if [ ! -s ${temp_file_1} ];then
-	read -p "Tag does not exist. Do you want it to be created? " -n 1 -r
+	read -p "Tag does not exist. Do you want it to be created? [Y/n]" -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]];then
 		echo '#'$TAG > ${temp_file_1}
 	else
-		rm -rf ${temp_file_1} ${temp_file_2}
+		rm -r ${temp_file_1} ${temp_file_2}
 		exit 0
 	fi
 fi
 
 ${VISUAL:-${EDITOR:-${DEDITOR}}} ${temp_file_1}
 
-read -p "Do you want to commit changes? " -n 1 -r
+read -p "Do you want to commit changes? [Y/n]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
 	cat ${temp_file_1} ${temp_file_2} > $FILE
 fi
 
-rm -rf ${temp_file_1} ${temp_file_2}
+rm -f ${temp_file_1} ${temp_file_2}
