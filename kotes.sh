@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE='allnotes.txt';
+FILE='allnotes.txt'
 
 while getopts ':t:lf:h' opt; do
 	case $opt in
@@ -12,10 +12,10 @@ while getopts ':t:lf:h' opt; do
 			exit 0	
 			;;
 		l) 
-			F_LIST=1;
+			F_LIST=1
 			;;
 		t)
-			TAG=$OPTARG;
+			TAG=$OPTARG
 			;;
 		f)
 			FILE=$OPTARG
@@ -41,27 +41,27 @@ if [ $F_LIST ]; then
 fi
 
 if [ ! $TAG ]; then
-	echo 'You must to specify tag. Check -h.';
+	echo 'You must to specify tag. Check -h.' >&2
 	exit 1
 fi
 
 temp_file_1=$(mktemp)
 if [ ! -f $temp_file_1 ]; then
-	echo "Unable to create tmp file."
+	echo "Unable to create tmp file." >&2
 	exit 1
 fi
 
 temp_file_2=$(mktemp)
 if [ ! -f $temp_file_2 ]; then
-	echo "Unable to create tmp file."
+	echo "Unable to create tmp file." >&2
 	rm -rf ${temp_file_1}
 	exit 1
 fi
 
-if [ -x /usr/bin/editor ]; then
-	default_editor=/usr/bin/editor;
-else
-	default_editor=vi;
+DEDITOR='/usr/bin/editor' 
+
+if [ ! -x $DEDITOR ]; then
+	default_editor='vi'
 fi
 
 awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
@@ -77,7 +77,7 @@ if [ ! -s ${temp_file_1} ];then
 	fi
 fi
 
-${VISUAL:-${EDITOR:-${default_editor}}} ${temp_file_1}
+${VISUAL:-${EDITOR:-${DEDITOR}}} ${temp_file_1}
 
 read -p "Do you want to commit changes? " -n 1 -r
 echo
