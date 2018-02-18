@@ -67,7 +67,7 @@ fi
 awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
 
 if [ ! -s ${temp_file_1} ];then
-	read -p "Tag does not exist. Do you want to it to be created? " -n 1 -r
+	read -p "Tag does not exist. Do you want it to be created? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]];then
 		echo '#'$TAG > ${temp_file_1}
