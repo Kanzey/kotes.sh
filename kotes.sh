@@ -2,14 +2,19 @@
 
 FILE='allnotes.txt'
 
-while getopts ':t:lf:h' opt; do
+while getopts ':t:lf:h:a:' opt; do
 	case $opt in
 		h)
 			echo "Options:"
 			echo "	-l				List #tags"
 			echo "	-t	<tagname>	Select tag to edit"
 			echo "	-f	<filename>	Select file to edit"
+			echo "	-a	<text>		Add text with tag without opening editor"
 			exit 0	
+			;;
+		a)
+			F_ADD=1
+			TEXT=$OPTARG
 			;;
 		l) 
 			F_LIST=1
@@ -45,6 +50,12 @@ if [ ! $TAG ]; then
 	exit 1
 fi
 
+if [ $F_ADD ]; then
+	echo '#'$TAG >> $FILE
+	echo $TEXT >> $FILE
+	exit 1
+fi
+
 temp_file_1=$(mktemp)
 if [ ! -f $temp_file_1 ]; then
 	echo "Unable to create tmp file." >&2
@@ -66,6 +77,8 @@ fi
 
 awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
 
+EDATE=$(stat -c %y $temp_file_1)
+
 if [ ! -s ${temp_file_1} ];then
 	read -p "Tag does not exist. Do you want it to be created? [Y/n]" -n 1 -r
 	echo
@@ -79,11 +92,16 @@ fi
 
 ${VISUAL:-${EDITOR:-${DEDITOR}}} ${temp_file_1}
 
-read -p "Do you want to commit changes? [Y/n]" -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]
-then
-	cat ${temp_file_1} ${temp_file_2} > $FILE
-fi
+EDATE2=$(stat -c %y $temp_file_1)
 
+if [ "$EDATE" == "$EDATE2" ];then
+	echo "No changes to apply."
+else
+	read -p "Do you want to commit changes? [Y/n]" -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]]
+	then
+		cat ${temp_file_1} ${temp_file_2} > $FILE
+	fi
+fi
 rm -f ${temp_file_1} ${temp_file_2}
