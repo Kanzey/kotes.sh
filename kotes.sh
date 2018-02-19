@@ -55,6 +55,8 @@ if [ ! $TAG ]; then
 	exit 1
 fi
 
+TAG=$(echo "$TAG" | | sed 's/#\?\(.*\)/\1/g')
+
 if [ $F_ADD -eq 1 ]; then
 	echo '#'$TAG >> "$FILE"
 	echo $TEXT >> "$FILE"
