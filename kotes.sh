@@ -24,7 +24,7 @@ while getopts ':t:lf:h:a:' opt; do
 			;;
 		f)
 			FILE=$OPTARG
-			if [ ! -f $FILE ]; then
+			if [ ! -f "$FILE" ]; then
 				echo "Unable to open file $FILE." >&2
 				exit 1
 			fi
@@ -41,7 +41,7 @@ while getopts ':t:lf:h:a:' opt; do
 done
 
 if [ $F_LIST ]; then
-	grep  '^#' $FILE | tr ' ' '\n' | sort | uniq | more
+	grep  '^#' "$FILE" | tr ' ' '\n' | sort | uniq | more
 	exit 0;
 fi
 
@@ -51,21 +51,21 @@ if [ ! $TAG ]; then
 fi
 
 if [ $F_ADD ]; then
-	echo '#'$TAG >> $FILE
-	echo $TEXT >> $FILE
+	echo '#'$TAG >> "$FILE"
+	echo $TEXT >> "$FILE"
 	exit 1
 fi
 
 temp_file_1=$(mktemp)
-if [ ! -f $temp_file_1 ]; then
+if [ ! -f "$temp_file_1" ]; then
 	echo "Unable to create tmp file." >&2
 	exit 1
 fi
 
 temp_file_2=$(mktemp)
-if [ ! -f $temp_file_2 ]; then
+if [ ! -f "$temp_file_2" ]; then
 	echo "Unable to create tmp file." >&2
-	rm -r ${temp_file_1}
+	rm -f "${temp_file_1}"
 	exit 1
 fi
 
@@ -75,24 +75,24 @@ if [ ! -x $DEDITOR ]; then
 	DEDITOR='vi'
 fi
 
-awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' $FILE 
+awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' "$FILE" 
 
 EDATE=$(stat -c %y $temp_file_1)
 
-if [ ! -s ${temp_file_1} ];then
+if [ ! -s "${temp_file_1}" ];then
 	read -p "Tag does not exist. Do you want it to be created? [Y/n]" -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]];then
-		echo '#'$TAG > ${temp_file_1}
+		echo '#'$TAG > "${temp_file_1}"
 	else
-		rm -r ${temp_file_1} ${temp_file_2}
+		rm -r "${temp_file_1}" "${temp_file_2}"
 		exit 0
 	fi
 fi
 
-${VISUAL:-${EDITOR:-${DEDITOR}}} ${temp_file_1}
+${VISUAL:-${EDITOR:-${DEDITOR}}} "${temp_file_1}"
 
-EDATE2=$(stat -c %y $temp_file_1)
+EDATE2=$(stat -c %y "$temp_file_1")
 
 if [ "$EDATE" == "$EDATE2" ];then
 	echo "No changes to apply."
@@ -101,7 +101,7 @@ else
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]
 	then
-		cat ${temp_file_1} ${temp_file_2} > $FILE
+		cat "${temp_file_1}" "${temp_file_2}" > "$FILE"
 	fi
 fi
-rm -f ${temp_file_1} ${temp_file_2}
+rm -f "${temp_file_1}" "${temp_file_2}"
