@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE='allnotes.txt'
+FILE="$HOME""/allnotes.txt"
 
 while getopts ':t:lf:h:a:' opt; do
 	case $opt in
