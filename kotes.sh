@@ -1,8 +1,10 @@
 #!/bin/bash
 
 FILE="$HOME""/allnotes.txt"
-
-while getopts ':t:lf:h:a:' opt; do
+F_ADD=0
+F_LIST=0
+F_VERB=0
+while getopts ':t:lf:h:a:v' opt; do
 	case $opt in
 		h)
 			echo "Options:"
@@ -15,6 +17,9 @@ while getopts ':t:lf:h:a:' opt; do
 		a)
 			F_ADD=1
 			TEXT=$OPTARG
+			;;
+		v)
+			F_VERB=1
 			;;
 		l) 
 			F_LIST=1
@@ -40,7 +45,7 @@ while getopts ':t:lf:h:a:' opt; do
 	esac
 done
 
-if [ $F_LIST ]; then
+if [ $F_LIST -eq 1 ]; then
 	grep  '^#' "$FILE" | tr ' ' '\n' | sort | uniq | more
 	exit 0;
 fi
@@ -50,11 +55,18 @@ if [ ! $TAG ]; then
 	exit 1
 fi
 
-if [ $F_ADD ]; then
+if [ $F_ADD -eq 1 ]; then
 	echo '#'$TAG >> "$FILE"
 	echo $TEXT >> "$FILE"
 	exit 1
 fi
+
+function clean() {
+	if [ $F_VERB -eq 1 ]; then
+		echo "Removing temporary files."
+	fi;
+	rm -f "${temp_file_1}" "${temp_file_2}"
+}
 
 temp_file_1=$(mktemp)
 if [ ! -f "$temp_file_1" ]; then
@@ -75,7 +87,21 @@ if [ ! -x $DEDITOR ]; then
 	DEDITOR='vi'
 fi
 
-awk '/^#/{if(/(^|\s+)#'$TAG'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' "$FILE" 
+E_TAG=$(echo "$TAG" | sed 's/\([+?^$|*(){}.]\)/\\\1/g')
+
+if [ ! $? -eq 0 ]; then
+	echo "SED error" >&2
+	clean
+	exit 1
+fi
+
+awk '/^#/{if(/(^|\s+)#'"$E_TAG"'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' "$FILE" 
+
+if [ ! $? -eq 0 ]; then
+	echo "AWK error. Exiting" >&2
+	clean
+	exit 1
+fi
 
 EDATE=$(stat -c %y $temp_file_1)
 
@@ -85,7 +111,7 @@ if [ ! -s "${temp_file_1}" ];then
 	if [[ $REPLY =~ ^[Yy]$ ]];then
 		echo '#'$TAG > "${temp_file_1}"
 	else
-		rm -r "${temp_file_1}" "${temp_file_2}"
+		clean
 		exit 0
 	fi
 fi
@@ -104,4 +130,5 @@ else
 		cat "${temp_file_1}" "${temp_file_2}" > "$FILE"
 	fi
 fi
-rm -f "${temp_file_1}" "${temp_file_2}"
+
+clean
