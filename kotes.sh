@@ -110,8 +110,8 @@ if [ ! -s "${temp_file_1}" ];then
 fi
 
 M_EDITOR=${VISUAL:-${EDITOR:-${DEDITOR}}} 
-$M_EDITOR "${temp_file_1}"
 
+$M_EDITOR "${temp_file_1}"
 EDATE2=$(stat -c %y "$temp_file_1")
 
 if [ "$EDATE" == "$EDATE2" ];then
@@ -119,15 +119,20 @@ if [ "$EDATE" == "$EDATE2" ];then
 	exit 0;
 fi
 
-if [ $(sed -n "1s/^#.*/0/p") -ne 0 ]
-	read -p "First line of file have to have leading #\nDo you wish to open editor [E] or discard changes [D]?" -n 1 -r
-	echo
-	if [[ $REPLY =~ ^[Ee]$ ]];then
-		$M_EDITOR "${temp_file_1}"
-	elif [[ $REPLY =~ ^[Dd]$ ]];then
-		exit 0;
+while true; do
+	if [ "$(sed -n '1s/^#.*/0/p' ${temp_file_1})" != "0" ]; then
+		read -p "Lack of leading # [E]dit or [D]iscard?" -n 1 -r
+		echo
+		if [[ $REPLY =~ ^[Ee]$ ]];then
+			$M_EDITOR "${temp_file_1}"
+		elif [[ $REPLY =~ ^[Dd]$ ]];then
+			exit 0;
+		fi
+	else
+		break;
 	fi
-fi
+done
+
 while true;do
 	read -p "Do you want to commit changes? [Y/n]" -n 1 -r
 	echo
