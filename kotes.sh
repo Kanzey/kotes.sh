@@ -63,25 +63,16 @@ if [ $F_ADD -eq 1 ]; then
 	exit 1
 fi
 
-function clean() {
-	if [ $F_VERB -eq 1 ]; then
-		echo "Removing temporary files."
-	fi;
-	rm -f "${temp_file_1}" "${temp_file_2}"
+tmp_err(){
+	echo "Failed to create temporary file.\nExiting" >&2
+	exit 1;
 }
 
-temp_file_1=$(mktemp)
-if [ ! -f "$temp_file_1" ]; then
-	echo "Unable to create tmp file." >&2
-	exit 1
-fi
+temp_file_1=$(mktemp) || tmp_err
+trap "{ rm -f $temp_file_1; }" EXIT
 
-temp_file_2=$(mktemp)
-if [ ! -f "$temp_file_2" ]; then
-	echo "Unable to create tmp file." >&2
-	rm -f "${temp_file_1}"
-	exit 1
-fi
+temp_file_2=$(mktemp) || tmp_err
+trap "{ rm -f $temp_file_2; }" EXIT
 
 DEDITOR='/usr/bin/editor' 
 
@@ -93,7 +84,6 @@ E_TAG=$(echo "$TAG" | sed 's/\([+?^$|*(){}.]\)/\\\1/g')
 
 if [ ! $? -eq 0 ]; then
 	echo "SED error" >&2
-	clean
 	exit 1
 fi
 
@@ -101,21 +91,22 @@ awk '/^#/{if(/(^|\s+)#'"$E_TAG"'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp
 
 if [ ! $? -eq 0 ]; then
 	echo "AWK error. Exiting" >&2
-	clean
 	exit 1
 fi
 
 EDATE=$(stat -c %y $temp_file_1)
 
 if [ ! -s "${temp_file_1}" ];then
-	read -p "Tag does not exist. Do you want it to be created? [Y/n]" -n 1 -r
-	echo
-	if [[ $REPLY =~ ^[Yy]$ ]];then
-		echo '#'$TAG > "${temp_file_1}"
-	else
-		clean
-		exit 0
-	fi
+	while true; do
+		read -p "Tag does not exist. Do you want it to be created? [Y/n]" -n 1 -r
+		echo
+		if [[ $REPLY =~ ^[Yy]$ ]];then
+			echo '#'$TAG > "${temp_file_1}"
+			break
+		elif [[ $REPLY =~ ^[Nn]$ ]];then	
+			exit 0
+		fi
+	done
 fi
 
 ${VISUAL:-${EDITOR:-${DEDITOR}}} "${temp_file_1}"
@@ -133,4 +124,3 @@ else
 	fi
 fi
 
-clean
