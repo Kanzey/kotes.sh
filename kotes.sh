@@ -68,11 +68,11 @@ tmp_err(){
 	exit 1;
 }
 
+trap clean EXIT
 temp_file_1=$(mktemp) || tmp_err
-trap "{ rm -f $temp_file_1; }" EXIT
-
+clean(){ rm -f ${temp_file_1};}
 temp_file_2=$(mktemp) || tmp_err
-trap "{ rm -f $temp_file_2; }" EXIT
+clean(){ rm -f ${temp_file_1} ${temp_file_2}; }
 
 DEDITOR='/usr/bin/editor' 
 
@@ -109,18 +109,33 @@ if [ ! -s "${temp_file_1}" ];then
 	done
 fi
 
-${VISUAL:-${EDITOR:-${DEDITOR}}} "${temp_file_1}"
+M_EDITOR=${VISUAL:-${EDITOR:-${DEDITOR}}} 
+$M_EDITOR "${temp_file_1}"
 
 EDATE2=$(stat -c %y "$temp_file_1")
 
 if [ "$EDATE" == "$EDATE2" ];then
 	echo "No changes to apply."
-else
-	read -p "Do you want to commit changes? [Y/n]" -n 1 -r
+	exit 0;
+fi
+
+if [ $(sed -n "1s/^#.*/0/p") -ne 0 ]
+	read -p "First line of file have to have leading #\nDo you wish to open editor [E] or discard changes [D]?" -n 1 -r
 	echo
-	if [[ $REPLY =~ ^[Yy]$ ]]
-	then
-		cat "${temp_file_1}" "${temp_file_2}" > "$FILE"
+	if [[ $REPLY =~ ^[Ee]$ ]];then
+		$M_EDITOR "${temp_file_1}"
+	elif [[ $REPLY =~ ^[Dd]$ ]];then
+		exit 0;
 	fi
 fi
+while true;do
+	read -p "Do you want to commit changes? [Y/n]" -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]];then
+		cat "${temp_file_1}" "${temp_file_2}" > "$FILE"
+		exit 0
+	elif [[ $REPLY =~ ^[Nn]$ ]];then
+		exit 0
+	fi
+done
 
