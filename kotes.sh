@@ -58,7 +58,7 @@ fi
 
 
 #Removine leading # form tag if there is one;
-TAG=$(echo "$TAG" | sed 's/#\?\(.*\)/\1/g')
+TAG=${TAG#\#}
 
 #If option add was used add tag to file and exit
 if [ $F_ADD -eq 1 ]; then
