@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #setting default variable values;
-FILE="$HOME""/allnotes.txt"
+FILE=$HOME/allnotes.txt
 F_ADD=0
 F_LIST=0
 
@@ -46,7 +46,7 @@ done
 #If option list grep all lines begining form #
 if [ $F_LIST -eq 1 ]; then
 	grep  '^#' "$FILE" | tr ' ' '\n' | sort | uniq | more
-	exit 0;
+	exit 0
 fi
 
 
@@ -69,7 +69,7 @@ fi
 
 tmp_err(){
 	echo "Failed to create temporary file.\nExiting" >&2
-	exit 1;
+	exit 1
 }
 
 #traping clean function to properly handle tmp files on exit or error
@@ -81,10 +81,10 @@ clean(){ rm -f ${temp_file_1};}
 temp_file_2=$(mktemp) || tmp_err
 clean(){ rm -f ${temp_file_1} ${temp_file_2}; }
 
-DEDITOR='/usr/bin/editor' 
+DEDITOR=/usr/bin/editor 
 
 if [ ! -x $DEDITOR ]; then
-	DEDITOR='vi'
+	DEDITOR=vi
 fi
 
 #escaping some awk special signs
@@ -133,7 +133,7 @@ EDATE2=$(stat -c %y "$temp_file_1")
 #check if last edition date has changed.
 if [ "$EDATE" == "$EDATE2" ];then
 	echo "No changes to apply."
-	exit 0;
+	exit 0
 fi
 
 #User edited file have to begin with # so if it's not,
@@ -145,10 +145,10 @@ while true; do
 		if [[ $REPLY =~ ^[Ee]$ ]];then
 			$M_EDITOR "${temp_file_1}"
 		elif [[ $REPLY =~ ^[Dd]$ ]];then
-			exit 0;
+			exit 0
 		fi
 	else
-		break;
+		break
 	fi
 done
 
