@@ -5,6 +5,11 @@ FILE=$HOME/allnotes.txt
 F_ADD=0
 F_LIST=0
 
+error_exit(){
+	echo $1 >&2
+	exit 1
+}
+
 while getopts ':t:lf:h:a:' opt; do
 	case $opt in
 		h)
@@ -28,32 +33,29 @@ while getopts ':t:lf:h:a:' opt; do
 		f)
 			FILE=$OPTARG
 			if [ ! -f "$FILE" ]; then
-				echo "Unable to open file $FILE." >&2
-				exit 1
+				error_exit "Unable to open file $FILE."
 			fi
 			;;
 		\?)
-			echo "Invaild option -$OPTARG. Use option -h for help." >&2
-			exit 1
+			error_exit"Invaild option -$OPTARG. Use option -h for help."
 			;;
 		:)
-			echo "Option -$OPTARG requires an argument." >&2
-			exit 1
+			error_exit "Option -$OPTARG requires an argument."
 			;;
 	esac
 done
 
+
 #If option list grep all lines begining form #
 if [ $F_LIST -eq 1 ]; then
-	grep  '^#' "$FILE" | tr ' ' '\n' | sort | uniq | more
+	grep  '^#' "$FILE" | tr ' ' '\n' | sort -u | more
 	exit 0
 fi
 
 
 #No tag specified
 if [ ! $TAG ]; then
-	echo 'You must to specify tag. Check -h.' >&2
-	exit 1
+	error_exit 'You must to specify tag. Check -h.'
 fi
 
 
@@ -64,12 +66,12 @@ TAG=${TAG#\#}
 if [ $F_ADD -eq 1 ]; then
 	echo '#'$TAG >> "$FILE"
 	echo $TEXT >> "$FILE"
-	exit 1
+	exit 0
 fi
 
+
 tmp_err(){
-	echo "Failed to create temporary file.\nExiting" >&2
-	exit 1
+	error_exit "Failed to create temporary file.\nExiting"
 }
 
 #traping clean function to properly handle tmp files on exit or error
@@ -91,8 +93,7 @@ fi
 E_TAG=$(echo "$TAG" | sed 's/\([+?^$|*(){}.]\)/\\\1/g')
 
 if [ $? -ne 0 ]; then
-	echo "SED error" >&2
-	exit 1
+	error_exit "SED error" 
 fi
 
 #Dividing note file into 2 files.
@@ -101,8 +102,7 @@ fi
 awk '/^#/{if(/(^|\s+)#'"$E_TAG"'(\s+|$)/){f=1}else{f=0} } {if(f){print >"'${temp_file_1}'"}else{ print >"'${temp_file_2}'"}}' "$FILE" 
 
 if [ $? -ne 0 ]; then
-	echo "AWK error. Exiting" >&2
-	exit 1
+	error_exit "AWK error. Exiting"
 fi
 
 #storing last edit date
